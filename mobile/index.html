@@ -257,7 +257,7 @@
         if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
 	    serverUrlInput.value = `https://${window.location.hostname}`;
         } else {
-	    serverUrlInput.value = 'https://gps.praxisnetworking.com';
+	    serverUrlInput.value = `https://${window.location.hostname}`;
         }
         
         function showStatus(message, type) {

@@ -51,7 +51,7 @@ This manual will guide you through setting up a complete GPS Tracker application
    - SSH client (Terminal on Mac/Linux, PuTTY on Windows)
 
 4. **Information You'll Need**
-   - VPS IP Address (example: `199.21.113.121`)
+   - VPS IP Address (example: `123.123.123.123`)
    - Your domain name (example: `gps.yourdomain.com`)
    - Email address (for SSL certificate)
 

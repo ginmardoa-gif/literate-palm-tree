@@ -49,7 +49,7 @@ services:
       dockerfile: Dockerfile
     container_name: gps_frontend
     environment:
-      - VITE_API_URL=https://gps.praxisnetworking.com/api
+      - VITE_API_URL=https://${DOMAIN}/api
     depends_on:
       - backend
     networks:

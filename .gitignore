@@ -1,0 +1,36 @@
+# Environment variables
+.env
+
+# Database data
+database/
+*.sql
+*backup*.sql
+
+# SSL certificates
+ssl/
+*.pem
+*.key
+*.crt
+
+# Logs
+*.log
+logs/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Node
+node_modules/
+npm-debug.log*
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Backups
+backups/
+gps-tracker-backups/
