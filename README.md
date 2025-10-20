@@ -13,7 +13,7 @@ Real-time GPS tracking system with web dashboard and mobile GPS sender.
 
 ### Option 1: Automated Setup (Recommended)
 ```bash
-git clone https://github.com/YOUR_USERNAME/gps-tracker-app.git
+git clone https://github.com/ginmardoa-gif/gps-tracker-app.git
 cd gps-tracker-app
 chmod +x setup-from-scratch.sh
 ./setup-from-scratch.sh

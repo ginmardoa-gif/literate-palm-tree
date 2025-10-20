@@ -436,7 +436,7 @@ Press `q` to exit status view.
 ### Step 1: Create docker-compose.yml
 
 ```bash
-cd ~/gps-tracker-final
+cd ~/gps-tracker-app
 nano docker-compose.yml
 ```
 
@@ -530,7 +530,7 @@ networks:
 At this point, you need to add your application source code to the directories:
 
 ```
-~/gps-tracker-final/
+~/gps-tracker-app/
 ├── backend/
 │   ├── app/
 │   │   ├── __init__.py
@@ -553,13 +553,13 @@ At this point, you need to add your application source code to the directories:
 For now, let's verify the structure:
 
 ```bash
-ls -la ~/gps-tracker-final/
+ls -la ~/gps-tracker-app/
 ```
 
 ### Step 2: Build Docker Containers
 
 ```bash
-cd ~/gps-tracker-final
+cd ~/gps-tracker-app
 docker compose build --no-cache
 ```
 
@@ -739,7 +739,7 @@ nano ~/backups/backup.sh
 #!/bin/bash
 DATE=$(date +%Y%m%d_%H%M%S)
 BACKUP_DIR="$HOME/backups"
-cd ~/gps-tracker-final
+cd ~/gps-tracker-app
 docker compose exec -T db pg_dump -U gpsadmin gps_tracker > $BACKUP_DIR/gps_tracker_$DATE.sql
 find $BACKUP_DIR -name "*.sql" -mtime +7 -delete
 echo "Backup completed: gps_tracker_$DATE.sql"
@@ -1023,7 +1023,7 @@ docker compose exec -T db psql -U gpsadmin gps_tracker < backup.sql
 ### Updating Application
 
 ```bash
-cd ~/gps-tracker-final
+cd ~/gps-tracker-app
 
 # Pull latest code (if using git)
 git pull
@@ -1046,7 +1046,7 @@ docker compose logs -f --tail=50
 
 ```bash
 # Edit PostgreSQL settings
-nano ~/gps-tracker-final/database/postgresql.conf
+nano ~/gps-tracker-app/database/postgresql.conf
 ```
 
 Add:
