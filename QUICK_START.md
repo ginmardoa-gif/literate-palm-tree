@@ -19,7 +19,7 @@ Get your GPS tracking system running in **under 30 minutes**!
 ### Step 1: Clone or Download Repository
 ```bash
 cd ~
-git clone https://github.com/YOUR_USERNAME/gps-tracker-app.git
+git clone https://github.com/ginmardoa-gif/gps-tracker-app.git
 # OR if you have the files already
 cd ~/gps-tracker-app
 ```
