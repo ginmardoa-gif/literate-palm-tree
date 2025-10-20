@@ -1,130 +1,448 @@
-# GPS Tracker System - Complete Installation & User Manual
-
-**Version:** 1.0  
-**Server IP:** 192.168.100.222  
-**Last Updated:** October 2025
-
----
+# GPS Tracker - Complete Setup Manual (From Scratch)
 
 ## Table of Contents
-
-1. [System Overview](#system-overview)
+1. [Introduction](#introduction)
 2. [Prerequisites](#prerequisites)
-3. [Initial Installation](#initial-installation)
-4. [File Structure](#file-structure)
-5. [Configuration Files](#configuration-files)
-6. [Starting the System](#starting-the-system)
-7. [Accessing the System](#accessing-the-system)
-8. [User Guide](#user-guide)
-9. [Troubleshooting](#troubleshooting)
-10. [Maintenance](#maintenance)
-11. [Backup & Restore](#backup--restore)
-12. [Security Best Practices](#security-best-practices)
+3. [Server Setup](#server-setup)
+4. [Install Dependencies](#install-dependencies)
+5. [Create Project Structure](#create-project-structure)
+6. [Configure Environment Variables](#configure-environment-variables)
+7. [Setup SSL Certificate](#setup-ssl-certificate)
+8. [Configure Nginx](#configure-nginx)
+9. [Create Docker Configuration](#create-docker-configuration)
+10. [Deploy Application](#deploy-application)
+11. [Verify Installation](#verify-installation)
+12. [Security Hardening](#security-hardening)
+13. [Usage Guide](#usage-guide)
+14. [Troubleshooting](#troubleshooting)
 
 ---
 
-## System Overview
+## Introduction
 
-### What This System Does
+This manual will guide you through setting up a complete GPS Tracker application from scratch on a VPS. By following these steps, you'll have:
 
-- **Real-time GPS Tracking** - Track up to 5 vehicles simultaneously
-- **Web Dashboard** - View all vehicles on an interactive map
-- **Mobile GPS Sender** - Use any smartphone to send location data
-- **Historical Routes** - View breadcrumb trails of vehicle movements
-- **Auto-Stop Detection** - Automatically saves locations where vehicles stop for 5+ minutes
-- **Manual Location Saving** - Pin and annotate important locations
-- **Statistics & Reporting** - View distance traveled, speeds, and export data
-- **User Authentication** - Secure login system for dashboard access
+- A web dashboard for monitoring vehicles
+- A mobile interface for sending GPS coordinates
+- Real-time location tracking
+- SSL encryption (HTTPS)
+- Containerized deployment with Docker
 
-### Technology Stack
-
-- **Backend:** Python 3.11 + Flask
-- **Database:** PostgreSQL 15
-- **Frontend:** React + Vite + Tailwind CSS
-- **Maps:** Leaflet.js + OpenStreetMap
-- **Containerization:** Docker + Docker Compose
-- **Security:** HTTPS with self-signed SSL certificates
+**Time Required:** 45-60 minutes  
+**Skill Level:** Beginner (just copy and paste!)
 
 ---
 
 ## Prerequisites
 
-### System Requirements
+### What You Need
 
-- **Operating System:** Linux (Ubuntu 20.04+ recommended)
-- **RAM:** Minimum 2GB (4GB recommended)
-- **CPU:** 2 cores minimum
-- **Storage:** 10GB free space
-- **Network:** Static IP address configured
+1. **VPS (Virtual Private Server)**
+   - Ubuntu 20.04+ or Debian 11+
+   - Minimum: 1 CPU, 2GB RAM, 20GB Storage
+   - Recommended: 2 CPU, 4GB RAM, 40GB Storage
 
-### Software Requirements
+2. **Domain Name**
+   - Example: `gps.yourdomain.com`
+   - DNS A record pointing to your VPS IP
 
-- Docker Engine 20.10+
-- Docker Compose v2.0+
-- OpenSSL (for SSL certificates)
+3. **Access Credentials**
+   - Root or sudo access to your VPS
+   - SSH client (Terminal on Mac/Linux, PuTTY on Windows)
 
-### Network Requirements
-
-- Server must have static IP: **192.168.100.222**
-- Ports required:
-  - 3000 (Dashboard HTTP)
-  - 5000 (Backend HTTP)
-  - 5443 (Backend HTTPS)
-  - 5432 (PostgreSQL - internal only)
-  - 8080 (Mobile HTTP)
-  - 8443 (Mobile HTTPS)
+4. **Information You'll Need**
+   - VPS IP Address (example: `199.21.113.121`)
+   - Your domain name (example: `gps.yourdomain.com`)
+   - Email address (for SSL certificate)
 
 ---
 
-## Initial Installation
+## Server Setup
 
-### Step 1: Prepare Directory Structure
+### Step 1: Connect to Your VPS
+
 ```bash
-cd ~
-mkdir gps-tracker-final
-cd gps-tracker-final
+ssh YOUR_USERNAME@YOUR_SERVER_IP
+```
+
+**Replace:**
+- `YOUR_USERNAME` with your server username (e.g., `root`, `ubuntu`, `admin`)
+- `YOUR_SERVER_IP` with your actual IP address
+
+**Example:**
+```bash
+ssh root@123.123.123.123
+```
+
+
+
+### Step 2: Update System Packages
+
+```bash
+apt update && apt upgrade -y
+```
+
+Wait for updates to complete (5-10 minutes).
+
+### Step 3: Set System Timezone (Optional)
+
+```bash
+timedatectl set-timezone America/New_York
+```
+
+Replace `America/New_York` with your timezone. List available timezones:
+```bash
+timedatectl list-timezones
+```
+
+---
+
+## Install Dependencies
+
+### Step 1: Install Docker
+
+```bash
+curl -fsSL https://get.docker.com -o get-docker.sh
+sh get-docker.sh
+rm get-docker.sh
+```
+
+**Verify installation:**
+```bash
+docker --version
+```
+
+Expected output: `Docker version 24.x.x`
+
+### Step 2: Install Docker Compose
+
+Docker Compose v2 is now included with Docker. Verify it's available:
+
+```bash
+docker compose version
+```
+
+**Expected output:** `Docker Compose version v2.x.x`
+
+If not available, install it:
+
+```bash
+apt install docker-compose-plugin -y
+```
+
+### Step 3: Install Nginx
+
+```bash
+apt install nginx -y
+```
+
+**Verify installation:**
+```bash
+nginx -v
+```
+
+Expected output: `nginx version: nginx/1.x.x`
+
+### Step 4: Install Certbot (SSL Certificates)
+
+```bash
+apt install certbot python3-certbot-nginx -y
+```
+
+**Verify installation:**
+```bash
+certbot --version
+```
+
+Expected output: `certbot 1.x.x`
+
+### Step 5: Install Git and Other Tools
+
+```bash
+apt install git nano curl wget -y
+```
+
+---
+
+## Create Project Structure
+
+### Step 1: Create Project Directory
+
+```bash
+mkdir -p ~/gps-tracker-app
+cd ~/gps-tracker-app
+```
+
+### Step 2: Create Directory Structure
+
+```bash
 mkdir -p backend/app
-mkdir -p frontend/src/components
+mkdir -p frontend
 mkdir -p mobile
-mkdir -p ssl
 mkdir -p database
 ```
 
-### Step 2: Generate SSL Certificates
+**Verify structure:**
 ```bash
-cd ~/gps-tracker-final/ssl
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-  -keyout key.pem \
-  -out cert.pem \
-  -subj "/C=SR/ST=Paramaribo/L=Paramaribo/O=GPS-Tracker/CN=192.168.100.222"
-cd ..
+tree -L 2
 ```
 
-### Step 3: Create All Configuration Files
+Expected output:
+```
+.
+├── backend
+│   └── app
+├── frontend
+├── mobile
+└── database
+```
 
-Create the following files with their exact content:
+If `tree` command not found, install it: `apt install tree -y`
 
-#### `.env`
-```env
+---
+
+## Configure Environment Variables
+
+### Step 1: Generate Secure Passwords
+
+```bash
+# Generate SECRET_KEY
+python3 -c "import secrets; print('SECRET_KEY=' + secrets.token_urlsafe(32))"
+
+# Generate POSTGRES_PASSWORD
+python3 -c "import secrets; print('POSTGRES_PASSWORD=' + secrets.token_urlsafe(32))"
+```
+
+**Copy the output!** You'll need these values in the next step.
+
+### Step 2: Create .env File
+
+```bash
+nano .env
+```
+
+**Copy and paste this template:**
+
+```bash
+# Server Configuration
+SERVER_IP=YOUR_SERVER_IP
+DOMAIN=YOUR_DOMAIN
+
 # Database Configuration
 POSTGRES_USER=gpsadmin
-POSTGRES_PASSWORD=gpspassword123
+POSTGRES_PASSWORD=PASTE_GENERATED_PASSWORD_HERE
 POSTGRES_DB=gps_tracker
-DATABASE_URL=postgresql://gpsadmin:gpspassword123@db:5432/gps_tracker
+DATABASE_URL=postgresql://gpsadmin:PASTE_GENERATED_PASSWORD_HERE@db:5432/gps_tracker
 
 # Flask Configuration
-FLASK_ENV=development
-SECRET_KEY=your-super-secret-key-change-in-production-12345
+SECRET_KEY=PASTE_GENERATED_SECRET_KEY_HERE
+FLASK_ENV=production
 
-# Server Configuration
-BACKEND_PORT=5000
-FRONTEND_PORT=3000
+# CORS Configuration
+CORS_ORIGINS=https://YOUR_DOMAIN
 ```
 
-#### `docker-compose.yml`
-```yaml
-version: '3.8'
+**Replace placeholders:**
+- `YOUR_SERVER_IP` → Your VPS IP (e.g., `123.123.123.123`)
+- `YOUR_DOMAIN` → Your domain (e.g., `gps.yourdomain.com`)
+- `PASTE_GENERATED_PASSWORD_HERE` → Password from Step 1
+- `PASTE_GENERATED_SECRET_KEY_HERE` → Secret key from Step 1
 
+**Make sure the `POSTGRES_PASSWORD` appears twice** - once in `POSTGRES_PASSWORD=` and once in `DATABASE_URL=`
+
+**Save and exit:** Press `Ctrl+X`, then `Y`, then `Enter`
+
+### Step 3: Verify .env File
+
+```bash
+cat .env
+```
+
+Double-check that all values are filled in correctly.
+
+---
+
+## Setup SSL Certificate
+
+### Step 1: Stop Nginx Temporarily
+
+```bash
+systemctl stop nginx
+```
+
+### Step 2: Obtain SSL Certificate
+
+```bash
+certbot certonly --standalone -d YOUR_DOMAIN --email YOUR_EMAIL --agree-tos --non-interactive
+```
+
+**Replace:**
+- `YOUR_DOMAIN` → Your domain (e.g., `gps.yourdomain.com`)
+- `YOUR_EMAIL` → Your email address
+
+Example:
+```bash
+certbot certonly --standalone -d gps.yourdomain.com --email admin@yourdomain.com --agree-tos --non-interactive
+```
+
+**Expected output:**
+```
+Successfully received certificate.
+Certificate is saved at: /etc/letsencrypt/live/YOUR_DOMAIN/fullchain.pem
+Key is saved at: /etc/letsencrypt/live/YOUR_DOMAIN/privkey.pem
+```
+
+### Step 3: Verify Certificate
+
+```bash
+certbot certificates
+```
+
+You should see your domain listed with an expiry date.
+
+### Step 4: Setup Auto-Renewal
+
+```bash
+# Test renewal process
+certbot renew --dry-run
+```
+
+If successful, auto-renewal is configured.
+
+---
+
+## Configure Nginx
+
+### Step 1: Create Nginx Configuration
+
+```bash
+nano /etc/nginx/sites-available/gps-tracker
+```
+
+**Copy and paste this configuration:**
+
+```nginx
+server {
+    listen 80;
+    listen [::]:80;
+    server_name YOUR_DOMAIN;
+    
+    location /.well-known/acme-challenge/ {
+        root /var/www/html;
+    }
+    
+    location / {
+        return 301 https://$server_name$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name YOUR_DOMAIN;
+    
+    ssl_certificate /etc/letsencrypt/live/YOUR_DOMAIN/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/YOUR_DOMAIN/privkey.pem;
+    
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers HIGH:!aNULL:!MD5;
+    ssl_prefer_server_ciphers on;
+    
+    add_header Strict-Transport-Security "max-age=31536000" always;
+    
+    access_log /var/log/nginx/gps-tracker-access.log;
+    error_log /var/log/nginx/gps-tracker-error.log;
+    
+    location /api {
+        proxy_pass http://127.0.0.1:5000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_redirect off;
+        proxy_read_timeout 300;
+        proxy_connect_timeout 300;
+        proxy_buffering off;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+    
+    location / {
+        proxy_pass http://127.0.0.1:3000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_redirect off;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection "upgrade";
+    }
+    
+    location /mobile {
+        proxy_pass http://127.0.0.1:8080/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_redirect off;
+    }
+    
+    location /health {
+        access_log off;
+        return 200 "healthy\n";
+        add_header Content-Type text/plain;
+    }
+}
+```
+
+**Replace ALL instances of `YOUR_DOMAIN`** with your actual domain (there are 4 instances).
+
+**Save and exit:** Press `Ctrl+X`, then `Y`, then `Enter`
+
+### Step 2: Enable the Site
+
+```bash
+# Create symbolic link
+ln -s /etc/nginx/sites-available/gps-tracker /etc/nginx/sites-enabled/
+
+# Remove default site
+rm -f /etc/nginx/sites-enabled/default
+
+# Test configuration
+nginx -t
+```
+
+**Expected output:**
+```
+nginx: configuration file /etc/nginx/nginx.conf test is successful
+```
+
+### Step 3: Start Nginx
+
+```bash
+systemctl start nginx
+systemctl enable nginx
+systemctl status nginx
+```
+
+Press `q` to exit status view.
+
+---
+
+## Create Docker Configuration
+
+### Step 1: Create docker-compose.yml
+
+```bash
+cd ~/gps-tracker-final
+nano docker-compose.yml
+```
+
+**Paste this configuration:**
+
+```yaml
 services:
   db:
     image: postgres:15-alpine
@@ -134,9 +452,10 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
     volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
+      - ./database:/var/lib/postgresql/data
+    networks:
+      - gps-network
+    restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
       interval: 10s
@@ -144,1632 +463,705 @@ services:
       retries: 5
 
   backend:
-    build: ./backend
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
     container_name: gps_backend
     environment:
       DATABASE_URL: ${DATABASE_URL}
-      FLASK_ENV: ${FLASK_ENV}
       SECRET_KEY: ${SECRET_KEY}
-    ports:
-      - "${BACKEND_PORT}:5000"
+      FLASK_ENV: ${FLASK_ENV}
+      CORS_ORIGINS: ${CORS_ORIGINS}
     depends_on:
       db:
         condition: service_healthy
-    volumes:
-      - ./backend/app:/app/app
+    networks:
+      - gps-network
     restart: unless-stopped
-
-  backend-proxy:
-    image: nginx:alpine
-    container_name: gps_backend_proxy
     ports:
-      - "5443:5443"
-    volumes:
-      - ./backend-proxy.conf:/etc/nginx/conf.d/default.conf:ro
-      - ./ssl:/etc/ssl:ro
-    depends_on:
-      - backend
-    restart: unless-stopped
+      - "127.0.0.1:5000:5000"
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   frontend:
-    build: ./frontend
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
     container_name: gps_frontend
-    ports:
-      - "${FRONTEND_PORT}:80"
+    environment:
+      - VITE_API_URL=https://${DOMAIN}/api
     depends_on:
       - backend
+    networks:
+      - gps-network
     restart: unless-stopped
+    ports:
+      - "127.0.0.1:3000:80"
 
   mobile:
-    build: ./mobile
+    image: nginx:alpine
     container_name: gps_mobile
-    ports:
-      - "8080:80"
-      - "8443:443"
     volumes:
-      - ./ssl:/etc/nginx/ssl:ro
+      - ./mobile:/usr/share/nginx/html:ro
+    networks:
+      - gps-network
     restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:80"
 
-volumes:
-  postgres_data:
+networks:
+  gps-network:
+    driver: bridge
 ```
 
-#### `backend-proxy.conf`
-```nginx
-server {
-    listen 5443 ssl;
-    server_name _;
+**Note:** This file uses variables from your `.env` file automatically.
 
-    ssl_certificate /etc/ssl/cert.pem;
-    ssl_certificate_key /etc/ssl/key.pem;
-    ssl_protocols TLSv1.2 TLSv1.3;
-
-    location / {
-        proxy_pass http://backend:5000;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_set_header Cookie $http_cookie;
-    }
-}
-```
-
-### Step 4: Create Backend Files
-
-See full file contents in the [Configuration Files](#configuration-files) section below.
-
-Required files:
-- `backend/requirements.txt`
-- `backend/Dockerfile`
-- `backend/app/__init__.py`
-- `backend/app/config.py`
-- `backend/app/models.py`
-- `backend/app/main.py`
-
-### Step 5: Create Frontend Files
-
-Required files:
-- `frontend/package.json`
-- `frontend/Dockerfile`
-- `frontend/nginx.conf`
-- `frontend/vite.config.js`
-- `frontend/tailwind.config.js`
-- `frontend/postcss.config.js`
-- `frontend/index.html`
-- `frontend/src/index.css`
-- `frontend/src/main.jsx`
-- `frontend/src/App.jsx`
-- `frontend/src/components/Login.jsx`
-- `frontend/src/components/Map.jsx`
-- `frontend/src/components/VehicleList.jsx`
-- `frontend/src/components/VehicleHistory.jsx`
-- `frontend/src/components/VehicleStats.jsx`
-
-### Step 6: Create Mobile Files
-
-Required files:
-- `mobile/index.html`
-- `mobile/nginx-https.conf`
-- `mobile/Dockerfile`
+**Save and exit:** Press `Ctrl+X`, then `Y`, then `Enter`
 
 ---
 
-## File Structure
+## Deploy Application
+
+### Step 1: Create Application Files
+
+At this point, you need to add your application source code to the directories:
+
 ```
-gps-tracker-final/
-├── .env
-├── docker-compose.yml
-├── backend-proxy.conf
-├── ssl/
-│   ├── cert.pem
-│   └── key.pem
+~/gps-tracker-final/
 ├── backend/
+│   ├── app/
+│   │   ├── __init__.py
+│   │   ├── main.py
+│   │   ├── config.py
+│   │   └── models.py
 │   ├── Dockerfile
-│   ├── requirements.txt
-│   └── app/
-│       ├── __init__.py
-│       ├── config.py
-│       ├── models.py
-│       └── main.py
+│   └── requirements.txt
 ├── frontend/
-│   ├── Dockerfile
-│   ├── nginx.conf
-│   ├── package.json
-│   ├── vite.config.js
-│   ├── tailwind.config.js
-│   ├── postcss.config.js
-│   ├── index.html
-│   └── src/
-│       ├── index.css
-│       ├── main.jsx
-│       ├── App.jsx
-│       └── components/
-│           ├── Login.jsx
-│           ├── Map.jsx
-│           ├── VehicleList.jsx
-│           ├── VehicleHistory.jsx
-│           └── VehicleStats.jsx
-└── mobile/
-    ├── Dockerfile
-    ├── nginx-https.conf
-    └── index.html
+│   ├── (React application files)
+│   └── Dockerfile
+├── mobile/
+│   └── index.html
+├── docker-compose.yml
+└── .env
 ```
 
----
+**Instructions for adding files will be provided separately.**
 
-## Configuration Files
+For now, let's verify the structure:
 
-### Critical CORS Configuration
-
-In `backend/app/main.py`, the CORS configuration MUST include mobile app origin:
-```python
-CORS(app, 
-     supports_credentials=True, 
-     origins=[
-         'http://192.168.100.222:3000',
-         'https://192.168.100.222:8443',
-         'http://192.168.100.222:8080'
-     ],
-     allow_headers=['Content-Type', 'Authorization'],
-     methods=['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'])
+```bash
+ls -la ~/gps-tracker-final/
 ```
 
-**This is essential for mobile app to work!**
+### Step 2: Build Docker Containers
 
----
-
-## Starting the System
-
-### First Time Setup
 ```bash
 cd ~/gps-tracker-final
-docker compose down -v  # Clean any previous installations
-docker compose up -d --build
+docker compose build --no-cache
 ```
 
-**Wait 5-10 minutes for all services to build and start.**
+This will take 5-10 minutes depending on your internet speed.
 
-### Check Status
+### Step 3: Start Containers
+
 ```bash
-docker compose ps
-```
-
-All containers should show "Up" status.
-
-### View Logs
-```bash
-# All services
-docker compose logs
-
-# Specific service
-docker compose logs backend
-docker compose logs frontend
-docker compose logs mobile
-
-# Follow logs in real-time
-docker compose logs -f backend
-```
-
-### Verify Installation
-```bash
-# Test backend HTTP
-curl http://192.168.100.222:5000/api/health
-
-# Test backend HTTPS
-curl -k https://192.168.100.222:5443/api/health
-
-# Expected response:
-# {"message":"GPS Tracker API is running","status":"healthy"}
-```
-
----
-
-## Accessing the System
-
-### Dashboard (Computer)
-
-**URL:** `http://192.168.100.222:3000`
-
-**Default Login:**
-- Username: `admin`
-- Password: `admin123`
-
-**Features:**
-- View all vehicles on map
-- Click vehicle to see historical route
-- Edit/delete saved locations
-- View statistics
-- Export data (CSV/JSON)
-
-## User Roles and Permissions
-
-The system implements role-based access control with four distinct user roles:
-
-### Role Hierarchy
-
-| Role | Access Level | Description |
-|------|-------------|-------------|
-| **Admin** | Full Access | Complete system control including user management |
-| **Manager** | Management | Can manage vehicles, places of interest, and view tracking |
-| **Operator** | Operational | Can view tracking and pin locations on map |
-| **Viewer** | Read-Only | Can only view tracking data |
-
-### Detailed Permissions Matrix
-
-| Feature | Viewer | Operator | Manager | Admin |
-|---------|--------|----------|---------|-------|
-| **Tracking & Viewing** |
-| View live tracking | ✅ | ✅ | ✅ | ✅ |
-| View vehicle history | ✅ | ✅ | ✅ | ✅ |
-| View saved locations | ✅ | ✅ | ✅ | ✅ |
-| View places of interest | ✅ | ✅ | ✅ | ✅ |
-| Export data | ✅ | ✅ | ✅ | ✅ |
-| **Location Management** |
-| Pin locations on map | ❌ | ✅ | ✅ | ✅ |
-| Save manual locations | ❌ | ✅ | ✅ | ✅ |
-| **Admin Panel Access** |
-| Access admin panel | ❌ | ❌ | ✅ | ✅ |
-| **User Management** |
-| View users | ❌ | ❌ | ❌ | ✅ |
-| Add users | ❌ | ❌ | ❌ | ✅ |
-| Edit users | ❌ | ❌ | ❌ | ✅ |
-| Delete users | ❌ | ❌ | ❌ | ✅ |
-| Assign roles | ❌ | ❌ | ❌ | ✅ |
-| **Vehicle Management** |
-| View vehicles | ✅ | ✅ | ✅ | ✅ |
-| Add vehicles | ❌ | ❌ | ✅ | ✅ |
-| Edit vehicles | ❌ | ❌ | ✅ | ✅ |
-| Delete vehicles | ❌ | ❌ | ✅ | ✅ |
-| Toggle active/inactive | ❌ | ❌ | ✅ | ✅ |
-| **Places of Interest** |
-| View POI | ✅ | ✅ | ✅ | ✅ |
-| Add POI | ❌ | ❌ | ✅ | ✅ |
-| Edit POI | ❌ | ❌ | ✅ | ✅ |
-| Delete POI | ❌ | ❌ | ✅ | ✅ |
-| Search addresses | ❌ | ❌ | ✅ | ✅ |
-
-### Default User
-
-On first installation, a default admin user is created:
-- **Username:** admin
-- **Password:** admin123
-- **Role:** admin
-- **Email:** admin@gpstracker.local
-
-⚠️ **IMPORTANT:** Change the default admin password immediately after first login!
-
-### Creating Additional Users
-
-Only administrators can create and manage users:
-
-1. Login as admin
-2. Click "Admin" button
-3. Go to "Users" tab
-4. Click "Add User"
-5. Fill in details and select appropriate role
-6. Click "Add"
-
-### Best Practices
-
-- **Viewer Role:** Use for clients or stakeholders who only need to monitor
-- **Operator Role:** Use for dispatchers or operations staff who track and mark locations
-- **Manager Role:** Use for supervisors who manage fleet and locations but shouldn't access user accounts
-- **Admin Role:** Limit to IT staff and senior management only
-
-### Mobile GPS Sender (Smartphone)
-
-**URL:** `https://192.168.100.222:8443`
-
-**Steps:**
-1. Open URL in phone browser (Chrome/Safari)
-2. Accept security warning (self-signed certificate)
-3. Server URL auto-fills: `https://192.168.100.222:5443`
-4. Select a vehicle (1-5)
-5. Choose update interval
-6. Click "Start Tracking"
-7. Allow GPS permissions when prompted
-
-**No login required for sending GPS data.**
-
----
-
-## User Guide
-
-### Creating New Users
-
-1. Access dashboard: `http://192.168.100.222:3000`
-2. Click "Don't have an account? Sign up"
-3. Enter username, email, password
-4. Click "Sign Up"
-5. Login with new credentials
-
-### Tracking a Vehicle
-
-**On Mobile:**
-1. Open `https://192.168.100.222:8443`
-2. Select vehicle number
-3. Click "Start Tracking"
-4. App shows:
-   - Updates Sent counter
-   - Current Speed
-   - GPS coordinates
-   - Accuracy
-
-**On Dashboard:**
-1. Login to dashboard
-2. Vehicle appears on map (colored dot)
-3. Click vehicle name in sidebar to:
-   - View detailed route history
-   - See saved locations
-   - View statistics
-
-### Saving Important Locations
-
-**Method 1: Manual Save (Mobile)**
-1. While tracking, click "📍 Save Current Location"
-2. Enter location name
-3. Add optional notes
-4. Location appears in dashboard
-
-**Method 2: Auto-Detection**
-- Vehicle automatically saves location after stopping for 5+ minutes
-- Appears as "Auto-detected Stop" with duration
-
-**Method 3: Dashboard (Future Feature)**
-- Click directly on map to save location
-
-### Viewing Historical Routes
-
-1. Click vehicle in sidebar
-2. Select history duration:
-   - Last 1 hour
-   - Last 6 hours
-   - Last 24 hours
-   - Last 3 days
-   - Last 7 days
-3. Map shows:
-   - Blue line (route trail)
-   - Small dots (GPS points)
-   - Yellow pins (saved locations)
-
-### Editing Saved Locations
-
-1. Select vehicle
-2. Scroll to "Saved Locations" panel
-3. Click "Edit" on any location
-4. Modify name or notes
-5. Click "Save"
-
-### Deleting Saved Locations
-
-1. Select vehicle
-2. Click "Delete" on location
-3. Confirm deletion
-
-### Viewing Statistics
-
-Statistics panel shows:
-- **Data Points:** Number of GPS updates received
-- **Distance:** Total distance traveled (km)
-- **Avg Speed:** Average speed (km/h)
-- **Max Speed:** Maximum speed recorded (km/h)
-
-### Exporting Data
-
-1. Select vehicle
-2. Choose history duration
-3. Click export format:
-   - **JSON:** Machine-readable format
-   - **CSV:** Spreadsheet format (Excel, Google Sheets)
-
-CSV includes:
-- Timestamp
-- Latitude
-- Longitude
-- Speed
-
----
-
-## Management Scripts Usage
-
-The system includes several helper scripts for common administrative tasks.
-
-### System Status Check
-
-View complete system health and statistics:
-```bash
-cd ~/gps-tracker-final
-./status.sh
-```
-
-**Output includes:**
-- Container status
-- User counts by role
-- Vehicle statistics (total/active/inactive)
-- Location data counts
-- Database size
-- Recent activity (24 hours)
-- Latest vehicle positions
-- Disk usage
-- Memory usage
-
-**Run this daily to monitor system health.**
-
----
-
-### Backup System
-
-Create complete backup of database and configuration:
-```bash
-cd ~/gps-tracker-final
-./backup.sh
-```
-
-**What gets backed up:**
-- Complete database (all users, vehicles, locations, POI)
-- Configuration files (.env, docker-compose.yml)
-- SSL certificates
-- Application code
-
-**Backup location:** `~/gps-tracker-backups/`
-
-**Retention:** Automatically deletes backups older than 30 days
-
-**Recommended schedule:**
-- Daily: Automated via cron
-- Before updates: Manual backup
-- Before major changes: Manual backup
-
-**Setup automated daily backups:**
-```bash
-# Add to crontab
-crontab -e
-
-# Add this line (runs daily at 2 AM):
-0 2 * * * cd ~/gps-tracker-final && ./backup.sh >> ~/backup.log 2>&1
-```
-
----
-
-### Restore from Backup
-
-Restore system from a previous backup:
-```bash
-cd ~/gps-tracker-final
-./restore.sh
-```
-
-**The script will:**
-1. Show available backup dates
-2. Ask you to choose one
-3. Confirm before restoring
-4. Stop services
-5. Restore database
-6. Restore configuration (if available)
-7. Restart services
-
-**Example:**
-```bash
-./restore.sh
-
-# Output:
-# Available backups:
-# 20251017_140530
-# 20251016_020000
-# 20251015_020000
-
-./restore.sh 20251017_140530
-```
-
-**⚠️ WARNING:** Restore will overwrite current data!
-
----
-
-### System Maintenance
-
-Run system health checks and cleanup:
-```bash
-cd ~/gps-tracker-final
-./maintenance.sh
-```
-
-**What it checks:**
-- Disk space
-- Container status
-- Database size
-- Record counts
-- Recent errors in logs
-- Memory usage
-
-**Cleanup option:**
-- Deletes location data older than 30 days
-- Keeps saved locations and POI
-- Frees up database space
-
-**Run monthly for optimal performance.**
-
----
-
-### User Management
-
-Interactive user management from command line:
-```bash
-cd ~/gps-tracker-final
-./manage-user.sh
-```
-
-**Available options:**
-
-**1. List all users**
-```bash
-# Shows: ID, Username, Email, Role, Active status, Created date
-```
-
-**2. Create new user**
-```bash
-# Prompts for:
-# - Username
-# - Email
-# - Password
-# - Role (admin/manager/operator/viewer)
-```
-
-**3. Change user role**
-```bash
-# Useful for promotions/demotions
-# Example: Promote operator to manager
-```
-
-**4. Reset user password**
-```bash
-# Securely updates password
-# Useful when users forget password
-```
-
-**5. Activate/Deactivate user**
-```bash
-# Disable without deleting
-# Can reactivate later
-```
-
-**6. Delete user**
-```bash
-# Permanently removes user
-# Requires typing 'DELETE' to confirm
-```
-
-**Examples:**
-
-**Create a new manager:**
-```bash
-./manage-user.sh
-# Select option 2
-# Username: john.doe
-# Email: john@company.com
-# Password: [hidden]
-# Role: manager
-```
-
-**Reset forgotten password:**
-```bash
-./manage-user.sh
-# Select option 4
-# Username: john.doe
-# New password: [hidden]
-```
-
-**Deactivate user (temporary suspension):**
-```bash
-./manage-user.sh
-# Select option 5
-# Username: john.doe
-# Activate? no
-```
-
----
-
-### Update System
-
-Update containers to latest versions:
-```bash
-cd ~/gps-tracker-final
-./update.sh
-```
-
-**The script will:**
-1. Create automatic backup first
-2. Pull latest Docker images
-3. Rebuild containers
-4. Restart services
-5. Verify status
-
-**Use this when:**
-- Applying code updates
-- Updating dependencies
-- Upgrading Docker images
-
----
-
-## Quick Reference - Common Tasks
-
-### Daily Operations
-
-**View system status:**
-```bash
-./status.sh
-```
-
-**Check recent activity:**
-```bash
-docker compose logs -f backend --tail 50
-```
-
-**View real-time location updates:**
-```bash
-docker compose logs -f backend | grep "POST /api/locations"
-```
-
----
-
-### User Management Tasks
-
-**Add new viewer for client:**
-```bash
-./manage-user.sh
-# Option 2: Create user
-# Role: viewer
-```
-
-**Promote operator to manager:**
-```bash
-./manage-user.sh
-# Option 3: Change role
-# New role: manager
-```
-
-**List all users and roles:**
-```bash
-./manage-user.sh
-# Option 1: List users
-```
-
----
-
-### Vehicle Management Tasks
-
-**Add vehicle (via dashboard):**
-1. Login as admin or manager
-2. Admin → Vehicles → Add Vehicle
-3. Enter name and device_id
-4. Submit
-
-**Deactivate vehicle temporarily:**
-1. Admin → Vehicles
-2. Click status badge (Active → Inactive)
-
-**View inactive vehicles:**
-1. Admin → Vehicles
-2. Click "Inactive (X)" filter
-
----
-
-### Backup & Recovery Tasks
-
-**Before major changes:**
-```bash
-./backup.sh
-```
-
-**Weekly backup verification:**
-```bash
-ls -lh ~/gps-tracker-backups/
-```
-
-**Restore after problem:**
-```bash
-./restore.sh YYYYMMDD_HHMMSS
-```
-
----
-
-### Monitoring Tasks
-
-**Check if services are running:**
-```bash
-docker compose ps
-```
-
-**View backend errors:**
-```bash
-docker compose logs backend --tail 100 | grep -i error
-```
-
-**Check database connections:**
-```bash
-docker compose exec db psql -U gpsadmin gps_tracker -c "SELECT count(*) FROM pg_stat_activity;"
-```
-
-**Monitor disk space:**
-```bash
-df -h /
-```
-
----
-
-### Maintenance Tasks
-
-**Monthly cleanup:**
-```bash
-./maintenance.sh
-# Answer 'yes' to cleanup old data
-```
-
-**Check database size:**
-```bash
-docker compose exec db psql -U gpsadmin gps_tracker -c "SELECT pg_size_pretty(pg_database_size('gps_tracker'));"
-```
-
-**Restart all services:**
-```bash
-docker compose restart
-```
-
-**Full system restart:**
-```bash
-docker compose down
 docker compose up -d
 ```
 
----
+### Step 4: Check Container Status
 
-### Performance Optimization
-
-**Delete old GPS points (keeps saved locations):**
 ```bash
-docker compose exec db psql -U gpsadmin gps_tracker -c "DELETE FROM locations WHERE timestamp < NOW() - INTERVAL '90 days';"
-```
-
-**Vacuum database (reclaim space):**
-```bash
-docker compose exec db psql -U gpsadmin gps_tracker -c "VACUUM FULL;"
-```
-
-**Rebuild database indexes:**
-```bash
-docker compose exec db psql -U gpsadmin gps_tracker -c "REINDEX DATABASE gps_tracker;"
-```
-
----
-
-## Automated Maintenance Schedule
-
-### Recommended Cron Jobs
-```bash
-# Edit crontab
-crontab -e
-
-# Add these lines:
-
-# Daily backup at 2 AM
-0 2 * * * cd ~/gps-tracker-final && ./backup.sh >> ~/backup.log 2>&1
-
-# Weekly status check at 9 AM Monday
-0 9 * * 1 cd ~/gps-tracker-final && ./status.sh >> ~/status.log 2>&1
-
-# Monthly maintenance at 3 AM on 1st of month
-0 3 1 * * cd ~/gps-tracker-final && ./maintenance.sh >> ~/maintenance.log 2>&1
-
-# Weekly log rotation (keep last 30 days)
-0 4 * * 0 find ~/gps-tracker-final -name "*.log" -mtime +30 -delete
-```
-
----
-
-## Security Best Practices
-
-### User Account Security
-
-**1. Change default admin password immediately:**
-```bash
-./manage-user.sh
-# Option 4: Reset password
-# Username: admin
-```
-
-**2. Create individual admin accounts:**
-- Don't share the default admin account
-- Create personal admin accounts for each administrator
-- Use the default admin only as backup
-
-**3. Use strong passwords:**
-- Minimum 12 characters
-- Mix of uppercase, lowercase, numbers, symbols
-- No dictionary words
-- Unique per user
-
-**4. Regular password rotation:**
-- Change admin passwords every 90 days
-- Update after staff changes
-- Reset if compromise suspected
-
-**5. Principle of least privilege:**
-- Viewer: For clients, stakeholders (read-only)
-- Operator: For dispatchers (tracking + pinning)
-- Manager: For supervisors (fleet management)
-- Admin: For IT staff only (full access)
-
-### System Security
-
-**1. SSL Certificate:**
-```bash
-# Generate new certificates annually
-cd ~/gps-tracker-final/ssl
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-  -keyout key.pem -out cert.pem
-docker compose restart backend-proxy
-```
-
-**2. Firewall configuration:**
-```bash
-# Allow only necessary ports
-sudo ufw allow 22/tcp    # SSH
-sudo ufw allow 3000/tcp  # Dashboard
-sudo ufw allow 5443/tcp  # Backend API
-sudo ufw allow 8443/tcp  # Mobile sender
-sudo ufw enable
-```
-
-**3. Regular updates:**
-```bash
-# Update system packages monthly
-sudo apt update && sudo apt upgrade -y
-
-# Update GPS Tracker
-cd ~/gps-tracker-final
-./update.sh
-```
-
-**4. Monitor access logs:**
-```bash
-# Check for suspicious activity
-docker compose logs backend | grep "POST /api/auth/login"
-```
-
-**5. Backup security:**
-```bash
-# Protect backup files
-chmod 600 ~/gps-tracker-backups/*
-```
-
-### Network Security
-
-**1. Change default ports (optional):**
-
-Edit `docker-compose.yml`:
-```yaml
-frontend:
-  ports:
-    - "8080:80"  # Change from 3000 to 8080
-```
-
-**2. Restrict IP access (optional):**
-
-Use nginx to allow only specific IPs:
-```bash
-nano backend-proxy.conf
-# Add: allow 192.168.1.0/24; deny all;
-```
-
-**3. Use VPN for remote access:**
-- Set up WireGuard or OpenVPN
-- Access dashboard only through VPN
-- Don't expose to public internet
-
----
-
-## Troubleshooting Common Issues
-
-### Scripts Not Working
-
-**Problem: Permission denied**
-```bash
-# Solution: Make scripts executable
-chmod +x ~/gps-tracker-final/*.sh
-```
-
-**Problem: Docker commands fail**
-```bash
-# Solution: Add user to docker group
-sudo usermod -aG docker $USER
-# Logout and login again
-```
-
-### Backup Issues
-
-**Problem: Backup fails with database error**
-```bash
-# Solution: Check if database is running
 docker compose ps
-docker compose restart db
-./backup.sh
 ```
 
-**Problem: No space for backup**
+**Expected output:**
+```
+NAME            STATUS                 PORTS
+gps_backend     Up (healthy)          127.0.0.1:5000->5000/tcp
+gps_db          Up (healthy)          5432/tcp
+gps_frontend    Up                    127.0.0.1:3000->80/tcp
+gps_mobile      Up                    127.0.0.1:8080->80/tcp
+```
+
+All services should show **"Up"**. Backend and database should be **"healthy"**.
+
+### Step 5: View Logs
+
 ```bash
-# Solution: Clean old backups
-rm ~/gps-tracker-backups/database_2025*.sql
-# Or increase disk space
+docker compose logs -f --tail=50
 ```
 
-### User Management Issues
+Press `Ctrl+C` to exit log view.
 
-**Problem: Can't create user - email exists**
+---
+
+## Verify Installation
+
+### Step 1: Test Backend Locally
+
 ```bash
-# Solution: Check existing users
-./manage-user.sh
-# Option 1: List all users
-# Use different email
+curl http://127.0.0.1:5000/api/health
 ```
 
-**Problem: User created but can't login**
-```bash
-# Solution: Check if user is active
-docker compose exec backend python -c "
-from app.models import User
-from app.main import app
-with app.app_context():
-    u = User.query.filter_by(username='USERNAME').first()
-    print(f'Active: {u.is_active}')
-"
+**Expected output:**
+```json
+{"status":"healthy","message":"GPS Tracker API is running"}
 ```
+
+### Step 2: Test Through Nginx
+
+```bash
+curl https://YOUR_DOMAIN/api/health
+```
+
+Replace `YOUR_DOMAIN` with your actual domain.
+
+**Expected output:**
+```json
+{"status":"healthy","message":"GPS Tracker API is running"}
+```
+
+### Step 3: Test Web Dashboard
+
+Open your browser and visit:
+
+```
+https://YOUR_DOMAIN
+```
+
+You should see the GPS Tracker login page.
+
+### Step 4: Test Mobile Interface
+
+```
+https://YOUR_DOMAIN/mobile
+```
+
+You should see the Mobile Location Sender interface.
+
+### Step 5: Login to Dashboard
+
+**Default credentials:**
+- Username: `admin`
+- Password: `admin123`
+
+⚠️ **IMPORTANT:** Change this password immediately!
+
+---
+
+## Security Hardening
+
+### Step 1: Configure Firewall
+
+```bash
+# Install UFW
+apt install ufw -y
+
+# Allow SSH (CRITICAL - Don't skip!)
+ufw allow 22/tcp
+
+# Allow HTTP and HTTPS
+ufw allow 80/tcp
+ufw allow 443/tcp
+
+# Enable firewall
+ufw --force enable
+
+# Check status
+ufw status numbered
+```
+
+**Expected output:**
+```
+Status: active
+
+     To                         Action      From
+     --                         ------      ----
+[ 1] 22/tcp                     ALLOW IN    Anywhere
+[ 2] 80/tcp                     ALLOW IN    Anywhere
+[ 3] 443/tcp                    ALLOW IN    Anywhere
+```
+
+### Step 2: Change Default Admin Password
+
+1. Login to dashboard: `https://YOUR_DOMAIN`
+2. Use credentials: `admin` / `admin123`
+3. Navigate to user settings
+4. Change password to something secure
+
+### Step 3: Secure SSH (Optional but Recommended)
+
+```bash
+# Backup SSH config
+cp /etc/ssh/sshd_config /etc/ssh/sshd_config.backup
+
+# Edit SSH config
+nano /etc/ssh/sshd_config
+```
+
+**Find and change these lines:**
+
+```
+PermitRootLogin no
+PasswordAuthentication no  # Only if you have SSH keys setup
+```
+
+**Save and restart SSH:**
+
+```bash
+systemctl restart sshd
+```
+
+⚠️ **WARNING:** Only disable `PasswordAuthentication` if you have SSH keys configured!
+
+### Step 4: Setup Automatic Updates
+
+```bash
+apt install unattended-upgrades -y
+dpkg-reconfigure -plow unattended-upgrades
+```
+
+Select **"Yes"** when prompted.
+
+### Step 5: Create Database Backup Script
+
+```bash
+mkdir -p ~/backups
+nano ~/backups/backup.sh
+```
+
+**Paste this script:**
+
+```bash
+#!/bin/bash
+DATE=$(date +%Y%m%d_%H%M%S)
+BACKUP_DIR="$HOME/backups"
+cd ~/gps-tracker-final
+docker compose exec -T db pg_dump -U gpsadmin gps_tracker > $BACKUP_DIR/gps_tracker_$DATE.sql
+find $BACKUP_DIR -name "*.sql" -mtime +7 -delete
+echo "Backup completed: gps_tracker_$DATE.sql"
+```
+
+**Make executable:**
+
+```bash
+chmod +x ~/backups/backup.sh
+```
+
+**Test backup:**
+
+```bash
+~/backups/backup.sh
+```
+
+**Setup daily automatic backup:**
+
+```bash
+crontab -e
+```
+
+**Add this line:**
+
+```
+0 2 * * * $HOME/backups/backup.sh >> $HOME/backups/backup.log 2>&1
+```
+
+This runs daily at 2 AM.
+
+---
+
+## Usage Guide
+
+### Accessing the Application
+
+**Dashboard (Desktop):**
+```
+https://YOUR_DOMAIN
+```
+
+**Mobile GPS Tracker:**
+```
+https://YOUR_DOMAIN/mobile
+```
+
+### Using the Mobile GPS Tracker
+
+1. Open `https://YOUR_DOMAIN/mobile` on your phone or computer
+2. **Server URL** should show: `https://YOUR_DOMAIN` (without `/api`)
+3. Select a vehicle from the dropdown
+4. Choose update interval (e.g., "Every 10 seconds")
+5. Click **"Start Tracking"**
+6. Your browser will request location permission - click **"Allow"**
+7. GPS coordinates will be sent automatically
+8. View tracked location on the dashboard in real-time
+
+### Monitoring Vehicles
+
+1. Login to dashboard
+2. Select a vehicle from the list
+3. View real-time location on map
+4. View location history
+5. Export data as CSV or JSON
+
+### Managing Users
+
+1. Login as admin
+2. Go to User Management
+3. Create new users with different roles:
+   - **Admin:** Full access
+   - **Viewer:** Read-only access
+
+### Managing Vehicles
+
+1. Go to Vehicle Management
+2. Add new vehicles with unique device IDs
+3. Assign names to vehicles
+4. Activate/deactivate vehicles
 
 ---
 
 ## Troubleshooting
 
-### Container Won't Start
-
-**Check logs:**
-```bash
-docker compose logs [service-name]
-```
-
-**Common issues:**
-- Port already in use
-- Missing files
-- Configuration errors
+### Issue: "502 Bad Gateway"
 
 **Solution:**
+
 ```bash
+# Check container status
+docker compose ps
+
+# Check logs
+docker compose logs backend
+
+# Restart containers
+docker compose restart
+```
+
+### Issue: Containers Not Starting
+
+**Solution:**
+
+```bash
+# View detailed logs
+docker compose logs
+
+# Rebuild containers
 docker compose down
-docker compose up -d --build
+docker compose build --no-cache
+docker compose up -d
 ```
 
-### Backend API Not Responding
+### Issue: Can't Login to Dashboard
 
-**Test connection:**
+**Solution:**
+
 ```bash
-curl http://localhost:5000/api/health
+# Check backend logs
+docker compose logs backend -f
+
+# Verify CORS settings
+docker compose exec backend python -c "import os; print(os.getenv('CORS_ORIGINS'))"
+
+# Should output your domain with https://
 ```
 
-**Check backend logs:**
+### Issue: SSL Certificate Error
+
+**Solution:**
+
 ```bash
-docker compose logs backend --tail 50
+# Check certificate status
+certbot certificates
+
+# Renew certificate
+certbot renew --force-renewal
+
+# Restart Nginx
+systemctl restart nginx
 ```
 
-**Common issues:**
-- Database not ready
-- CORS misconfiguration
-- Port binding issues
-
-### Mobile App "Failed to Send Data"
+### Issue: Mobile GPS Not Working
 
 **Checklist:**
-1. Check backend is running: `docker compose ps`
-2. Test backend: `curl -k https://192.168.100.222:5443/api/health`
-3. Verify CORS configuration in `backend/app/main.py`
-4. Check backend logs: `docker compose logs backend -f`
-5. Ensure phone on same network (192.168.100.0/24)
 
-**CORS Fix:**
-Ensure `backend/app/main.py` includes mobile app origin:
-```python
-origins=[
-    'http://192.168.100.222:3000',
-    'https://192.168.100.222:8443',  # Mobile HTTPS
-    'http://192.168.100.222:8080'   # Mobile HTTP
-]
-```
+1. Server URL should be `https://YOUR_DOMAIN` (no `/api`)
+2. Check browser console for errors (F12 → Console)
+3. Ensure location permission granted
+4. Check backend logs: `docker-compose logs backend -f`
 
-### Dashboard Login Fails
-
-**Test backend auth:**
-```bash
-curl -X POST http://localhost:5000/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"username":"admin","password":"admin123"}'
-```
-
-**Check if default user was created:**
-```bash
-docker compose logs backend | grep "admin user"
-```
-
-Should show: "Created default admin user"
-
-**Reset database (WARNING: Deletes all data):**
-```bash
-docker compose down -v
-docker compose up -d
-```
-
-### Map Not Loading
-
-**Check browser console:**
-- Press F12
-- Look for errors in Console tab
-
-**Common issues:**
-- Network requests blocked
-- Component failed to load
-- API endpoints unreachable
+### Issue: Database Connection Error
 
 **Solution:**
+
 ```bash
-docker compose restart frontend
+# Check database status
+docker-compose ps gps_db
+
+# Restart database
+docker-compose restart db
+
+# Check database logs
+docker-compose logs db
 ```
 
-### SSL Certificate Errors on Mobile
+### Issue: Out of Disk Space
 
-**Expected behavior:** Browser shows security warning for self-signed certificate.
+**Solution:**
 
-**Steps:**
-1. Click "Advanced" or "Details"
-2. Click "Proceed to 192.168.100.222" or "Accept Risk"
-3. This is safe - it's your own certificate
-
-**For production:** Use Let's Encrypt for valid certificates.
-
-### Database Connection Issues
-
-**Check database status:**
 ```bash
-docker compose logs db --tail 50
-```
+# Check disk usage
+df -h
 
-**Test connection:**
-```bash
-docker compose exec db psql -U gpsadmin -d gps_tracker -c "SELECT 1;"
-```
+# Clean Docker
+docker system prune -a
 
-**Reset database:**
-```bash
-docker compose down -v
-docker compose up -d
+# Remove old logs
+journalctl --vacuum-time=7d
 ```
 
 ---
 
-## Maintenance
+## Useful Commands
 
-### Routine Maintenance Tasks
+### Container Management
 
-#### Daily
-- Monitor disk space: `df -h`
-- Check container health: `docker compose ps`
-
-#### Weekly
-- Review logs for errors: `docker compose logs --tail 100`
-- Verify backups are working
-- Check database size: `docker compose exec db psql -U gpsadmin -d gps_tracker -c "SELECT pg_size_pretty(pg_database_size('gps_tracker'));"`
-
-#### Monthly
-- Update system packages: `apt update && apt upgrade`
-- Review and archive old tracking data
-- Rotate logs if needed
-
-### Starting/Stopping Services
 ```bash
-# Start all services
-docker compose up -d
+# View all containers
+docker compose ps
 
-# Stop all services (keeps data)
-docker compose down
+# View logs (all services)
+docker compose logs -f
 
-# Restart specific service
-docker compose restart backend
+# View logs (specific service)
+docker compose logs backend -f
 
 # Restart all services
 docker compose restart
 
-# View status
-docker compose ps
-```
-
-### Updating the System
-
-**After modifying code:**
-```bash
-cd ~/gps-tracker-final
-
-# Rebuild specific service
-docker compose up -d --build backend
-
-# Or rebuild everything
-docker compose up -d --build
-
-# View logs to verify
-docker compose logs -f
-```
-
-### Viewing Logs
-```bash
-# All logs
-docker compose logs
-
-# Specific service
-docker compose logs backend
-docker compose logs frontend
-docker compose logs db
-
-# Last 50 lines
-docker compose logs backend --tail 50
-
-# Follow in real-time
-docker compose logs -f backend
-
-# All services, real-time
-docker compose logs -f
-```
-
-### Cleaning Up
-```bash
-# Remove stopped containers
+# Stop all services
 docker compose down
 
-# Remove containers and volumes (DELETES ALL DATA)
-docker compose down -v
+# Start all services
+docker compose up -d
 
-# Remove unused images
-docker image prune -a
-
-# Remove everything (CAUTION)
-docker system prune -a --volumes
-```
-
----
-
-## Backup & Restore
-
-### Backup Database
-
-**Create backup directory:**
-```bash
-mkdir -p ~/gps-tracker-backups
-```
-
-**Backup database:**
-```bash
-docker compose exec db pg_dump -U gpsadmin gps_tracker > ~/gps-tracker-backups/backup_$(date +%Y%m%d_%H%M%S).sql
-```
-
-**Automated daily backups (crontab):**
-```bash
-crontab -e
-
-# Add this line:
-0 2 * * * cd ~/gps-tracker-final && docker compose exec -T db pg_dump -U gpsadmin gps_tracker > ~/gps-tracker-backups/backup_$(date +\%Y\%m\%d_\%H\%M\%S).sql
-```
-
-### Restore Database
-
-**Stop containers:**
-```bash
+# Rebuild and restart
 docker compose down
-```
-
-**Start only database:**
-```bash
-docker compose up -d db
-```
-
-**Wait 10 seconds, then restore:**
-```bash
-cat ~/gps-tracker-backups/backup_YYYYMMDD_HHMMSS.sql | docker compose exec -T db psql -U gpsadmin gps_tracker
-```
-
-**Start all services:**
-```bash
+docker compose build --no-cache
 docker compose up -d
 ```
 
-### Backup Configuration Files
+### System Monitoring
+
 ```bash
-# Create backup
-tar -czf ~/gps-tracker-config-backup_$(date +%Y%m%d).tar.gz \
-  ~/gps-tracker-final/.env \
-  ~/gps-tracker-final/docker-compose.yml \
-  ~/gps-tracker-final/backend-proxy.conf \
-  ~/gps-tracker-final/ssl/
+# Check disk space
+df -h
 
-# List backups
-ls -lh ~/gps-tracker-config-backup*.tar.gz
+# Check memory
+free -h
+
+# Check CPU usage
+top
+# Press 'q' to exit
+
+# Check Docker disk usage
+docker system df
 ```
 
-### Full System Backup
+### Nginx Management
+
 ```bash
-# Stop services
-docker compose down
+# Test configuration
+nginx -t
 
-# Backup everything
-tar -czf ~/gps-tracker-full-backup_$(date +%Y%m%d).tar.gz \
-  ~/gps-tracker-final/
+# Restart Nginx
+systemctl restart nginx
 
-# Restart services
-cd ~/gps-tracker-final
-docker compose up -d
+# Reload configuration
+systemctl reload nginx
+
+# View access logs
+tail -f /var/log/nginx/gps-tracker-access.log
+
+# View error logs
+tail -f /var/log/nginx/gps-tracker-error.log
 ```
 
-### Restore Full System
-```bash
-# Extract backup
-tar -xzf ~/gps-tracker-full-backup_YYYYMMDD.tar.gz -C ~/
+### Database Management
 
-# Start services
-cd ~/gps-tracker-final
-docker compose up -d
-```
-
----
-
-## Security Best Practices
-
-### Change Default Credentials
-
-**1. Change Admin Password:**
-- Login to dashboard
-- Create new admin user with strong password
-- Delete or disable default admin account
-
-**2. Change Database Password:**
-Edit `.env` file:
-```env
-POSTGRES_PASSWORD=your-new-strong-password-here
-DATABASE_URL=postgresql://gpsadmin:your-new-strong-password-here@db:5432/gps_tracker
-```
-
-Rebuild:
-```bash
-docker compose down -v
-docker compose up -d --build
-```
-
-**3. Change Secret Key:**
-Edit `.env` file:
-```env
-SECRET_KEY=generate-a-long-random-string-here-at-least-32-characters
-```
-
-Generate strong key:
-```bash
-openssl rand -hex 32
-```
-
-### Production SSL Certificates
-
-For production use, replace self-signed certificates with Let's Encrypt:
-```bash
-# Install certbot
-apt install certbot
-
-# Generate certificate
-certbot certonly --standalone -d yourdomain.com
-
-# Copy certificates
-cp /etc/letsencrypt/live/yourdomain.com/fullchain.pem ~/gps-tracker-final/ssl/cert.pem
-cp /etc/letsencrypt/live/yourdomain.com/privkey.pem ~/gps-tracker-final/ssl/key.pem
-
-# Restart services
-docker compose restart backend-proxy mobile
-```
-
-### Firewall Configuration
-
-**If using UFW:**
-```bash
-# Allow required ports
-sudo ufw allow 3000/tcp  # Dashboard
-sudo ufw allow 5000/tcp  # Backend HTTP
-sudo ufw allow 5443/tcp  # Backend HTTPS
-sudo ufw allow 8443/tcp  # Mobile HTTPS
-
-# Enable firewall
-sudo ufw enable
-```
-
-### Network Security
-
-- Use VPN for remote access
-- Restrict access by IP if possible
-- Use strong passwords for all accounts
-- Enable HTTPS for all external access
-- Keep system and Docker updated
-
-### Regular Updates
-```bash
-# Update system packages
-apt update && apt upgrade -y
-
-# Update Docker images
-docker compose pull
-docker compose up -d
-```
-
----
-
-## System Specifications
-
-### Default Ports
-
-| Service | Port | Protocol | Description |
-|---------|------|----------|-------------|
-| Dashboard | 3000 | HTTP | Web UI |
-| Backend API | 5000 | HTTP | Internal API |
-| Backend API | 5443 | HTTPS | External API |
-| PostgreSQL | 5432 | TCP | Database (internal) |
-| Mobile App | 8080 | HTTP | Mobile redirect |
-| Mobile App | 8443 | HTTPS | Mobile GPS sender |
-
-### Default Credentials
-
-**Dashboard:**
-- Username: `admin`
-- Password: `admin123`
-
-**Database:**
-- User: `gpsadmin`
-- Password: `gpspassword123`
-- Database: `gps_tracker`
-
-**⚠️ CHANGE THESE IN PRODUCTION!**
-
-### Vehicles
-
-5 pre-configured vehicles:
-- Vehicle 1: `device_1`
-- Vehicle 2: `device_2`
-- Vehicle 3: `device_3`
-- Vehicle 4: `device_4`
-- Vehicle 5: `device_5`
-
----
-
-## API Endpoints
-
-### Public Endpoints (No Auth)
-```
-GET  /api/health              - Health check
-POST /api/gps                 - Receive GPS data
-POST /api/auth/login          - User login
-POST /api/auth/register       - User registration
-GET  /api/auth/check          - Check auth status
-```
-
-### Protected Endpoints (Requires Auth)
-```
-GET    /api/vehicles                                    - List all vehicles
-GET    /api/vehicles/:id/location                       - Get last location
-GET    /api/vehicles/:id/history                        - Get location history
-GET    /api/vehicles/:id/saved-locations                - Get saved locations
-POST   /api/vehicles/:id/saved-locations                - Save location
-PUT    /api/vehicles/:id/saved-locations/:loc_id        - Update location
-DELETE /api/vehicles/:id/saved-locations/:loc_id        - Delete location
-GET    /api/vehicles/:id/stats                          - Get statistics
-GET    /api/vehicles/:id/export                         - Export data
-POST   /api/auth/logout                                 - Logout
-```
-
----
-
-## Frequently Asked Questions
-
-### Q: Can I add more vehicles?
-
-**A:** Yes. Edit `backend/app/main.py` and add more vehicles in the initialization section:
-```python
-if Vehicle.query.count() == 0:
-    for i in range(1, 11):  # Change 6 to 11 for 10 vehicles
-        vehicle = Vehicle(name=f'Vehicle {i}', device_id=f'device_{i}')
-        db.session.add(vehicle)
-```
-
-Also update `mobile/index.html` to add more options in the vehicle selector.
-
-### Q: How do I change the server IP?
-
-**A:** You must update the IP in multiple places:
-
-1. SSL certificate (regenerate)
-2. `backend/app/main.py` (CORS origins)
-3. `mobile/index.html` (auto-fill URL)
-
-Then rebuild all containers.
-
-### Q: Can I use a domain name instead of IP?
-
-**A:** Yes! Update all references to `192.168.100.222` with your domain name, then get proper SSL certificates using Let's Encrypt.
-
-### Q: How much data does GPS tracking use?
-
-**A:** Approximately:
-- 5 second interval: ~100 KB per hour
-- 10 second interval: ~50 KB per hour
-- 30 second interval: ~17 KB per hour
-
-### Q: Can multiple users login simultaneously?
-
-**A:** Yes! Each user gets their own session. Create separate accounts for each user.
-
-### Q: How do I delete old tracking data?
-
-**A:** Connect to database:
-```bash
-docker compose exec db psql -U gpsadmin gps_tracker
-
--- Delete locations older than 30 days
-DELETE FROM locations WHERE timestamp < NOW() - INTERVAL '30 days';
-
--- Delete auto-detected stops older than 30 days
-DELETE FROM saved_locations WHERE timestamp < NOW() - INTERVAL '30 days' AND visit_type = 'auto_detected';
-
--- Exit
-\q
-```
-
-### Q: Can I track devices on different networks?
-
-**A:** Yes, but you need to:
-1. Forward ports through your router
-2. Use your public IP or domain name
-3. Use proper SSL certificates
-4. Configure firewall rules
-
-### Q: How accurate is the GPS tracking?
-
-**A:** Accuracy depends on:
-- Phone GPS quality (typically 5-20 meters)
-- Signal strength
-- Environment (urban/rural)
-- Weather conditions
-
-The system displays accuracy in meters on mobile app.
-
----
-
-## Support & Resources
-
-### Log Locations
-```bash
-# Docker logs
-docker compose logs [service]
-
-# System logs
-/var/log/syslog
-```
-
-### Useful Commands Reference
-```bash
-# System info
-docker compose ps                          # Container status
-docker compose logs [service]              # View logs
-docker stats                               # Resource usage
-
-# Service management
-docker compose up -d                       # Start all
-docker compose down                        # Stop all
-docker compose restart [service]           # Restart service
-docker compose up -d --build               # Rebuild and start
-
-# Database
-docker compose exec db psql -U gpsadmin gps_tracker  # Connect to DB
-docker compose exec db pg_dump -U gpsadmin gps_tracker > backup.sql  # Backup
-
-# Cleanup
-docker compose down -v                     # Remove with data
-docker system prune -a                     # Clean all unused
-```
-
-### Configuration File Locations
-```
-~/gps-tracker-final/.env                   # Environment variables
-~/gps-tracker-final/docker-compose.yml     # Container orchestration
-~/gps-tracker-final/backend/app/main.py    # Backend logic & CORS
-~/gps-tracker-final/ssl/                   # SSL certificates
-```
-
----
-
-## Version History
-
-**v1.0 - October 2025**
-- Initial release
-- 5 vehicle support
-- Real-time tracking
-- Historical routes
-- Auto-stop detection
-- Manual location saving
-- User authentication
-- Statistics & export
-- HTTPS security
-
----
-
-## License & Credits
-
-**Built with:**
-- Flask (Python web framework)
-- React (JavaScript UI library)
-- PostgreSQL (Database)
-- Leaflet.js (Mapping library)
-- OpenStreetMap (Map tiles)
-- Docker (Containerization)
-
-**Map Data:** © OpenStreetMap contributors
-
----
-
-## Emergency Procedures
-
-### System Completely Broken
-```bash
-# Stop everything
-docker compose down -v
-
-# Remove all containers, images, volumes
-docker system prune -a --volumes
-
-# Restore from backup
-tar -xzf ~/gps-tracker-full-backup_YYYYMMDD.tar.gz -C ~/
-
-# Rebuild
-cd ~/gps-tracker-final
-docker compose up -d --build
-```
-
-### Database Corrupted
-```bash
-# Stop services
-docker compose down
-
-# Remove database volume
-docker volume rm gps-tracker-final_postgres_data
-
-# Start services (creates fresh database)
-docker compose up -d
-
-# Restore from backup
-cat ~/gps-tracker-backups/backup_YYYYMMDD_HHMMSS.sql | docker compose exec -T db psql -U gpsadmin gps_tracker
-```
-
-### Forgot Admin Password
 ```bash
 # Access database
 docker compose exec db psql -U gpsadmin gps_tracker
 
-# Reset admin password to 'newpassword123'
-# First, generate hash in Python:
-docker compose exec backend python -c "from flask_bcrypt import Bcrypt; print(Bcrypt().generate_password_hash('newpassword123').decode('utf-8'))"
+# Backup database
+docker compose exec db pg_dump -U gpsadmin gps_tracker > backup.sql
 
-# Copy the output hash, then in psql:
-UPDATE users SET password_hash = 'PASTE_HASH_HERE' WHERE username = 'admin';
-\q
+# Restore database
+docker compose exec -T db psql -U gpsadmin gps_tracker < backup.sql
 ```
 
 ---
 
-**END OF MANUAL**
+## Maintenance Tasks
 
-*For additional support, refer to the Docker and Flask documentation.*
+### Weekly Tasks
+
+1. Check container status: `docker compose ps`
+2. Review logs: `docker compose logs --tail=100`
+3. Check disk space: `df -h`
+4. Verify backups exist: `ls -lh ~/backups/`
+
+### Monthly Tasks
+
+1. Update system packages: `apt update && apt upgrade -y`
+2. Clean Docker: `docker system prune`
+3. Review SSL certificate expiry: `certbot certificates`
+4. Test backup restoration (on test server)
+
+### Updating Application
+
+```bash
+cd ~/gps-tracker-final
+
+# Pull latest code (if using git)
+git pull
+
+# Rebuild containers
+docker compose down
+docker compose build --no-cache
+docker compose up -d
+
+# Verify everything works
+docker compose ps
+docker compose logs -f --tail=50
+```
 
 ---
+
+## Performance Optimization
+
+### Increase Database Performance
+
+```bash
+# Edit PostgreSQL settings
+nano ~/gps-tracker-final/database/postgresql.conf
+```
+
+Add:
+```
+shared_buffers = 256MB
+effective_cache_size = 1GB
+maintenance_work_mem = 64MB
+```
+
+Restart database:
+```bash
+docker compose restart db
+```
+
+### Enable Nginx Caching
+
+Edit Nginx config:
+```bash
+nano /etc/nginx/sites-available/gps-tracker
+```
+
+Add inside `server` block:
+```nginx
+location ~* \.(jpg|jpeg|png|gif|ico|css|js)$ {
+    expires 1y;
+    add_header Cache-Control "public, immutable";
+}
+```
+
+Reload Nginx:
+```bash
+nginx -t && systemctl reload nginx
+```
+
+---
+
+## Getting Help
+
+### Check Application Status
+
+```bash
+# Container health
+docker compose ps
+
+# Recent logs
+docker compose logs --tail=100
+
+# System resources
+docker stats
+```
+
+### Common Log Locations
+
+- **Backend:** `docker compose logs backend`
+- **Database:** `docker compose logs db`
+- **Nginx Access:** `/var/log/nginx/gps-tracker-access.log`
+- **Nginx Error:** `/var/log/nginx/gps-tracker-error.log`
+- **System:** `journalctl -xe`
+
+---
+
+## Summary
+
+Congratulations! You have successfully set up:
+
+✅ Secure VPS server with firewall  
+✅ Docker containerized application  
+✅ SSL/HTTPS encryption  
+✅ Nginx reverse proxy  
+✅ PostgreSQL database  
+✅ GPS Tracker web dashboard  
+✅ Mobile GPS tracking interface  
+✅ Automated backups  
+✅ Auto-renewal SSL certificates  
+
+### Access Your Application
+
+**Dashboard:** `https://YOUR_DOMAIN`  
+**Mobile:** `https://YOUR_DOMAIN/mobile`  
+**API:** `https://YOUR_DOMAIN/api`  
+**Health Check:** `https://YOUR_DOMAIN/health`  
+
+### Default Login
+
+- Username: `admin`
+- Password: `admin123`
+
+⚠️ **Change this password immediately!**
+
+---
+
+## Next Steps
+
+1. ✅ Change admin password
+2. ✅ Add your vehicles
+3. ✅ Create additional users
+4. ✅ Test GPS tracking
+5. ✅ Configure monitoring alerts
+6. ✅ Set up off-site backups
+
+**Your GPS Tracker is ready to use!** 🎉
+
+---
+
+## Support
+
+For issues or questions:
+
+1. Check [Troubleshooting](#troubleshooting) section
+2. Review logs: `docker compose logs -f`
+3. Verify configuration files
+4. Check firewall rules: `ufw status`
+5. Test connectivity: `curl https://YOUR_DOMAIN/api/health`
+
+---
+
+*Manual Version: 1.0*  
+*Last Updated: 2025*
