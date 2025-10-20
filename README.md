@@ -1,4 +1,24 @@
-# GPS Tracker System
+# ⚠️ REPOSITORY MOVED
+
+**This repository has been relocated to:**
+
+## 🆕 https://github.com/ginmardoa-gif/gps-tracker-app
+
+Please clone from the new location:
+```bash
+git clone https://github.com/ginmardoa-gif/gps-tracker-app.git
+```
+
+All active development, issues, and contributions happen at the new repository.
+
+---
+
+**⚠️ This repository is archived for historical reference only.**
+
+---
+
+# GPS Tracker System (Archived)
+
 
 Real-time GPS tracking system with web dashboard and mobile GPS sender.
 
