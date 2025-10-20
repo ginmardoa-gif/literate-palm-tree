@@ -257,7 +257,7 @@
         if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
 	    serverUrlInput.value = `https://${window.location.hostname}`;
         } else {
-	    serverUrlInput.value = `https://${window.location.hostname}`;
+	    serverUrlInput.value = 'http://localhost:3000';  // For local development only
         }
         
         function showStatus(message, type) {

@@ -33,14 +33,14 @@ if ! groups | grep -q docker; then
 fi
 
 echo "Creating directory structure..."
-mkdir -p ~/gps-tracker-final/{backend/app,frontend/src/components,mobile,ssl,database}
+mkdir -p ~/gps-tracker-app/{backend/app,frontend/src/components,mobile,ssl,database}
 
 echo "Note: You need to create all configuration files manually."
 echo "Follow the INSTALLATION_MANUAL.md for complete file contents."
 echo ""
-echo "Setup directory created at: ~/gps-tracker-final"
+echo "Setup directory created at: ~/gps-tracker-app"
 echo ""
 echo "Next steps:"
 echo "1. Copy all configuration files from manual"
-echo "2. Generate SSL certificates: cd ~/gps-tracker-final/ssl && openssl req -x509 ..."
+echo "2. Generate SSL certificates: cd ~/gps-tracker-app/ssl && openssl req -x509 ..."
 echo "3. Run: docker compose up -d --build"
